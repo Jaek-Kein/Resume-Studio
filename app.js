@@ -148,7 +148,7 @@
     const d=state.resume,p=state.preferences, contacts=[d.email,d.phone,d.address].filter(Boolean);
     return `<div class="paper-stack" id="resume-print-area"><article class="resume-page template-${p.template}" style="--accent:${esc(p.accent)};--resume-font-size:${p.fontSize}pt;--resume-line-height:${p.lineHeight};--resume-margin:${p.margin}mm;--resume-font:${esc(fontStack())}"><header class="resume-header">${p.showPhoto&&d.photo&&p.template!=='ats'?`<img class="resume-photo" src="${d.photo}" alt="증명사진">`:''}<div class="identity"><h1>${esc(d.name||'이름')}</h1>${d.englishName?`<p class="english-name">${esc(d.englishName)}</p>`:''}${d.title?`<p class="headline">${esc(d.title)}</p>`:''}</div><div class="contact">${contacts.map(x=>`<span>${esc(x)}</span>`).join('')}${d.birth&&p.template==='korean'?`<span>${esc(d.birth)}</span>`:''}${link(d.website)}${link(d.github)}${link(d.linkedin)}</div></header><div class="resume-body">${p.sectionOrder.filter(k=>!p.hiddenSections.includes(k)).map(renderSection).join('')}</div></article></div>`;
   }
-  function renderPreview(){const box=document.querySelector('.preview-box');if(box)box.innerHTML=previewHTML();}
+  function renderPreview(){const box=document.querySelector('.preview-box');if(box)box.innerHTML=previewHTML();window.refreshPageGuides();}
 
   function formForCollection(key,type){ const d=state.resume, a=d[key]||[], label=Object.values(sectionDefs).find(x=>x.key===key)?.label||key; return `<div class="form-section"><div class="section-row"><h3>${label}</h3><button class="ghost" data-action="add" data-key="${key}">+ 추가</button></div>${a.length?'':'<p class="empty-hint">필요한 경우 항목을 추가해 주세요.</p>'}${a.map((x,i)=>repeat(`${label} ${i+1}`,key,i,collectionFields(key,type,x,i))).join('')}</div>`; }
   function collectionFields(key,type,x,i){
@@ -199,6 +199,7 @@
   async function printResume(){document.title=`${state.resume.name||'resume'}_resume`;ensureFont();try{await document.fonts.ready;}catch{}window.print();}
 
   function bind(){
+    window.refreshPageGuides();
     app.querySelectorAll('[data-path]').forEach(el=>el.addEventListener('input',e=>{let v=e.target.dataset.check!==undefined?e.target.checked:e.target.dataset.number!==undefined?Number(e.target.value):e.target.value;setPath(e.target.dataset.path,v);if(e.target.dataset.path==='preferences.fontFamily'){render(true);return;}if(e.target.type==='range'){const b=e.target.nextElementSibling;if(b)b.textContent=e.target.dataset.path.endsWith('fontSize')?`${Number(v).toFixed(1)}pt`:e.target.dataset.path.endsWith('lineHeight')?Number(v).toFixed(2):`${v}mm`;}}));
     app.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render();});
     app.querySelectorAll('[data-action]').forEach(b=>{const a=b.dataset.action;if(a==='visibility')return;b.addEventListener('click',async()=>{
