@@ -103,6 +103,32 @@
   }
 
   let state=load(), tab='content', dragKey=null, saveTimer=null;
+  const history = createEditHistory(state);
+  function updateHistoryButtons(){
+    document.querySelectorAll('[data-action="undo"]').forEach(b=>b.disabled=!history.canUndo);
+    document.querySelectorAll('[data-action="redo"]').forEach(b=>b.disabled=!history.canRedo);
+  }
+  function restoreHistory(direction){
+    const active=document.activeElement, path=active?.dataset.path;
+    const selection=path ? [active.selectionStart,active.selectionEnd] : null;
+    const restored=history[direction]();
+    if(!restored)return;
+    state=restored;
+    scheduleSave(false);
+    render(true);
+    if(path){
+      const input=Array.from(app.querySelectorAll('[data-path]')).find(el=>el.dataset.path===path);
+      input?.focus({preventScroll:true});
+      if(input && selection[0]!==null)try{input.setSelectionRange(...selection);}catch{}
+    }
+  }
+  document.addEventListener('keydown',event=>{
+    if(event.isComposing || event.altKey || !(event.ctrlKey||event.metaKey))return;
+    const key=event.key.toLowerCase();
+    if(key!=='z' && key!=='y')return;
+    event.preventDefault();
+    restoreHistory(key==='y'||event.shiftKey?'redo':'undo');
+  });
   const app=document.querySelector('#app');
   const field=(label,path,value,type='text',placeholder='')=>`<label class="field"><span>${label}</span><input data-path="${path}" type="${type}" value="${esc(value)}" placeholder="${esc(placeholder)}"></label>`;
   const area=(label,path,value,rows=4)=>`<label class="field"><span>${label}</span><textarea data-path="${path}" rows="${rows}">${esc(value)}</textarea></label>`;
@@ -111,8 +137,8 @@
   const sectionHead=(k)=>`<h2 class="resume-section-title">${state.preferences.template==='korean'?sectionDefs[k].label:sectionDefs[k].en}${state.preferences.template==='modern'?'<span></span>':''}</h2>`;
 
   function getPath(path){ return path.split('.').reduce((o,k)=>o?.[/^\d+$/.test(k)?Number(k):k],state); }
-  function setPath(path,value){ const p=path.split('.'); let o=state; for(let i=0;i<p.length-1;i++){const k=/^\d+$/.test(p[i])?Number(p[i]):p[i];o=o[k];} const last=/^\d+$/.test(p.at(-1))?Number(p.at(-1)):p.at(-1);o[last]=value; scheduleSave(); if(path.includes('font')) ensureFont(); renderPreview(); }
-  function scheduleSave(){ const s=document.querySelector('.save-status'); if(s)s.textContent='저장 중…'; clearTimeout(saveTimer); saveTimer=setTimeout(()=>{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));const e=document.querySelector('.save-status');if(e)e.textContent='자동 저장됨';},180); }
+  function setPath(path,value){ const p=path.split('.'); let o=state; for(let i=0;i<p.length-1;i++){const k=/^\d+$/.test(p[i])?Number(p[i]):p[i];o=o[k];} const last=/^\d+$/.test(p.at(-1))?Number(p.at(-1)):p.at(-1);o[last]=value; scheduleSave(path); if(path.includes('font')) ensureFont(); renderPreview(); }
+  function scheduleSave(group=null){ if(group!==false)history.record(state,group);updateHistoryButtons();const s=document.querySelector('.save-status'); if(s)s.textContent='저장 중…'; clearTimeout(saveTimer); saveTimer=setTimeout(()=>{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));const e=document.querySelector('.save-status');if(e)e.textContent='자동 저장됨';},180); }
   function fontStack(){ const p=state.preferences; if(p.fontFamily==='custom') return `"${(p.customFontName||'Custom Resume Font').replace(/["']/g,'')}", sans-serif`; return fontPresets[p.fontFamily]?.stack || fontPresets.system.stack; }
   function ensureFont(){
     const p=state.preferences, preset=fontPresets[p.fontFamily]; let href=preset?.url;
@@ -195,15 +221,21 @@
     minimal:['summary','experience','education','skills']
   };
   function exportJSON(){const b=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`${state.resume.name||'resume'}-resume-v3.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),0);}
-  function handleImport(f){if(!f)return;const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result);if(!x?.resume||!x?.preferences)throw 0;state=normalizeState(x);localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render();}catch{alert('지원하지 않는 이력서 JSON 파일입니다.');}};r.readAsText(f);}
+  function handleImport(f){if(!f)return;const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result);if(!x?.resume||!x?.preferences)throw 0;state=normalizeState(x);scheduleSave();render();}catch{alert('지원하지 않는 이력서 JSON 파일입니다.');}};r.readAsText(f);}
   async function printResume(){document.title=`${state.resume.name||'resume'}_resume`;ensureFont();try{await document.fonts.ready;}catch{}window.print();}
 
   function bind(){
     window.refreshPageGuides();
+    const bar=document.createElement('div');
+    bar.className='history-actions';
+    bar.innerHTML='<button class="ghost" data-action="undo" title="Ctrl/Cmd+Z">↶ 실행 취소</button><button class="ghost" data-action="redo" title="Ctrl/Cmd+Shift+Z 또는 Ctrl+Y">↷ 다시 실행</button><span>최근 60단계 · 새로고침 시 초기화</span>';
+    app.querySelector('.editor-tabs').after(bar);
+    updateHistoryButtons();
     app.querySelectorAll('[data-path]').forEach(el=>el.addEventListener('input',e=>{let v=e.target.dataset.check!==undefined?e.target.checked:e.target.dataset.number!==undefined?Number(e.target.value):e.target.value;setPath(e.target.dataset.path,v);if(e.target.dataset.path==='preferences.fontFamily'){render(true);return;}if(e.target.type==='range'){const b=e.target.nextElementSibling;if(b)b.textContent=e.target.dataset.path.endsWith('fontSize')?`${Number(v).toFixed(1)}pt`:e.target.dataset.path.endsWith('lineHeight')?Number(v).toFixed(2):`${v}mm`;}}));
     app.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render();});
     app.querySelectorAll('[data-action]').forEach(b=>{const a=b.dataset.action;if(a==='visibility')return;b.addEventListener('click',async()=>{
       if(a==='print')await printResume();
+      if(a==='undo'||a==='redo')restoreHistory(a);
       if(a==='swap'){state.preferences.panelOrder=state.preferences.panelOrder==='editor-left'?'preview-left':'editor-left';scheduleSave();render();}
       if(a==='add'){state.resume[b.dataset.key].push(addDefaults[b.dataset.key]());scheduleSave();render(true);}
       if(a==='remove'){state.resume[b.dataset.key].splice(Number(b.dataset.index),1);scheduleSave();render(true);}
