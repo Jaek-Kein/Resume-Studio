@@ -15,6 +15,9 @@
 @media(max-width:1150px){.app-shell.panels-reversed{grid-template-columns:1fr}.app-shell.panels-reversed .editor,.app-shell.panels-reversed .preview-wrap{order:initial}.app-shell.panels-reversed .editor{border-left:0}.swap-button{display:none}}
 @media print{.app-shell.panels-reversed .preview-wrap{order:initial}.kv-grid{break-inside:avoid-page}}
 
+/* Preserve line breaks in card descriptions and education notes. */
+.entry-note{white-space:pre-line}
+
 /* Real A4 sheets shared by the preview and PDF output. */
 .preview-box{flex-shrink:0;max-width:100%}
 .paper-stack{width:210mm;max-width:none;display:flex;flex-direction:column;gap:28px;transform-origin:top left}
