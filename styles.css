@@ -10,7 +10,25 @@
 
 /* v3 additions */
 .history-actions{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:12px 0}.history-actions button{font-size:12px;padding:8px 10px}.history-actions button:disabled{opacity:.4;cursor:default}.history-actions span{font-size:10px;color:#737983}
-.resume-page{position:relative}.page-guides{position:absolute;inset:0;pointer-events:none}.page-boundary{position:absolute;left:0;right:0;border-top:2px dashed #d97706;color:#92400e;font:600 11px/1.5 system-ui;text-align:right;padding-right:8px}.page-crossing{outline:1px dashed #d97706;outline-offset:3px}.page-report{width:210mm;max-width:100%;flex-shrink:0;background:#fff8eb;border:1px solid #f0d5a6;border-radius:8px;padding:10px 12px;margin-bottom:14px;color:#74410e;font-size:12px}.page-report p{margin:5px 0 0}.page-report ul{margin:8px 0 0;padding-left:18px}@media print{.page-crossing{outline:none!important}}
+.resume-page{position:relative}.page-report{width:210mm;max-width:100%;flex-shrink:0;background:#fff8eb;border:1px solid #f0d5a6;border-radius:8px;padding:10px 12px;margin-bottom:14px;color:#74410e;font-size:12px}.page-report p{margin:5px 0 0}.page-report ul{margin:8px 0 0;padding-left:18px}
 .top-actions{display:flex;gap:8px;align-items:center}.swap-button{white-space:nowrap}.app-shell.panels-reversed{grid-template-columns:1fr minmax(500px,42vw)}.app-shell.panels-reversed .editor{order:2;border-right:0;border-left:1px solid #e5e7eb}.app-shell.panels-reversed .preview-wrap{order:1}.english-name{margin:0 0 3px;color:#747b84;font-size:9pt}.kv-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 20px}.kv-grid>div{display:grid;grid-template-columns:82px 1fr;border-bottom:1px solid #eef0f2;padding:3px 0}.kv-grid b{font-size:8.5pt;color:#646b74}.section-actions{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 14px}.custom-font-box{padding:10px;border:1px dashed #d5d9de;border-radius:10px;background:#fafbfc;margin-bottom:8px}.template-modern .english-name{color:rgba(255,255,255,.72)}
 @media(max-width:1150px){.app-shell.panels-reversed{grid-template-columns:1fr}.app-shell.panels-reversed .editor,.app-shell.panels-reversed .preview-wrap{order:initial}.app-shell.panels-reversed .editor{border-left:0}.swap-button{display:none}}
 @media print{.app-shell.panels-reversed .preview-wrap{order:initial}.kv-grid{break-inside:avoid-page}}
+
+/* Real A4 sheets shared by the preview and PDF output. */
+.preview-box{flex-shrink:0;max-width:100%}
+.paper-stack{width:210mm;max-width:none;display:flex;flex-direction:column;gap:28px;transform-origin:top left}
+.resume-page.paginated-page{height:297mm;min-height:297mm;flex-shrink:0;transform:none;margin:0;outline:1px solid #d4dae2;box-shadow:0 5px 20px rgba(17,24,39,.14)}
+.paginated-page .resume-body,.paginated-page section{display:flow-root}
+.paginated-page section{break-inside:auto;page-break-inside:auto}
+.page-number{position:absolute;bottom:5mm;left:0;right:0;text-align:center;font:500 11px/1.5 system-ui;color:#8a929e}
+.page-report{background:#f8fafc;border-color:#d6dee8;color:#475569;line-height:1.5}
+.page-report strong{color:#1e293b}
+.resume-page.page-oversized{height:auto}
+@media print{
+  .preview-box{width:auto!important;height:auto!important;max-width:none}
+  .paper-stack{display:block;transform:none!important;width:210mm}
+  .resume-page.paginated-page{outline:none;box-shadow:none;break-after:page;page-break-after:always}
+  .resume-page.paginated-page:last-child{break-after:auto;page-break-after:auto}
+  .paginated-page section,.paginated-page .entry,.paginated-page .kv-grid{break-inside:auto;page-break-inside:auto}
+}
