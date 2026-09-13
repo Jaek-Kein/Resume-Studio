@@ -5,9 +5,18 @@
   const uid = () => Math.random().toString(36).slice(2, 10);
   const clone = x => JSON.parse(JSON.stringify(x));
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const safeUrl = v => /^https?:\/\//i.test(v) ? v : `https://${v}`;
+  const safeUrl = value => {
+    const text=String(value??'').trim();
+    if(!text)return '';
+    const candidate=/^https?:\/\//i.test(text)?text:text.startsWith('//')?`https:${text}`:`https://${text}`;
+    if(/^[a-z][a-z\d+.-]*:/i.test(text)&&!/^https?:\/\//i.test(text)&&! /^[^/:]+:\d+(?:[/?#]|$)/.test(text))return '';
+    try{const url=new URL(candidate);return url.hostname&&!url.username&&!url.password?url.href:'';}catch{return '';}
+  };
   const description = t => t ? `<p class="entry-description">${esc(t)}</p>` : '';
-  const link = v => v ? `<a href="${esc(safeUrl(v))}" target="_blank" rel="noreferrer">${esc(v.replace(/^https?:\/\//,''))}</a>` : '';
+  const link = v => {
+    const text=String(v??'').trim(),href=safeUrl(text),label=esc(text.replace(/^(?:https?:)?\/\//i,''));
+    return href?`<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${label}</a>`:label;
+  };
 
   const templateLabels = { korean:'한국 표준형', ats:'ATS 단일컬럼', minimal:'미니멀', modern:'모던', compact:'컴팩트', europass:'Europass형' };
   const fontPresets = {
@@ -56,7 +65,7 @@
     experiences:[], internships:[], freelance:[], projects:[], educations:[], certificates:[], languages:[], awards:[], activities:[], volunteering:[], training:[], research:[], patents:[], opensource:[], overseas:[], references:[], customSections:[]
   };
   const blankResume = {
-    name:'', englishName:'', title:'', email:'', phone:'', address:'', birth:'', gender:'', nationality:'', website:'', github:'', linkedin:'', photo:'',
+    name:'', englishName:'', title:'', email:'', phone:'', address:'', birth:'', gender:'', nationality:'', website:'', blog:'', github:'', linkedin:'', photo:'',
     objective:'', summary:'', coreCompetencies:'', skills:'', interests:'',
     military:{status:'', branch:'', rank:'', specialty:'', start:'', end:'', dischargeReason:''},
     koreanSpecial:{veteran:'', disability:'', employmentProtection:'', driverLicense:'', travelRestriction:'', note:''},
@@ -74,7 +83,7 @@
     certificates:[{id:uid(),name:'정보처리기사',issuer:'한국산업인력공단',date:'2024.06',credential:''}],
     languages:[{id:uid(),name:'한국어',level:'원어민'},{id:uid(),name:'English',level:'Business / B2'}]
   };
-  const contactFields = {"email": ["이메일", "email"], "phone": ["연락처"], "address": ["주소"], "birth": ["생년월일 (선택)"], "website": ["포트폴리오"], "github": ["GitHub"], "linkedin": ["LinkedIn"]};
+  const contactFields = {"email": ["이메일", "email"], "phone": ["연락처"], "address": ["주소"], "birth": ["생년월일 (선택)"], "website": ["포트폴리오"], "github": ["GitHub"], "linkedin": ["LinkedIn"], "blog": ["Blog"]};
   const normalizeContactOrder = order => [...new Set([...(Array.isArray(order)?order:[]), ...Object.keys(contactFields)])].filter(k=>Object.hasOwn(contactFields,k));
   const defaultPrefs = {
     contactOrder:Object.keys(contactFields),
@@ -194,7 +203,7 @@
 
   function previewHTML(){
     const d=state.resume,p=state.preferences;
-    return `<div class="paper-stack" id="resume-print-area"><article class="resume-page template-${p.template}" style="--accent:${esc(p.accent)};--resume-font-size:${p.fontSize}pt;--resume-line-height:${p.lineHeight};--resume-margin:${p.margin}mm;--resume-font:${esc(fontStack())}"><header class="resume-header">${p.showPhoto&&d.photo&&p.template!=='ats'?`<img class="resume-photo" src="${d.photo}" alt="증명사진">`:''}<div class="identity"><h1>${esc(d.name||'이름')}</h1>${d.englishName?`<p class="english-name">${esc(d.englishName)}</p>`:''}${d.title?`<p class="headline">${esc(d.title)}</p>`:''}</div><div class="contact">${p.contactOrder.map(key=>{const value=d[key];if(!value||(key==='birth'&&p.template!=='korean'))return '';return ['website','github','linkedin'].includes(key)?link(value):`<span>${esc(value)}</span>`;}).join('')}</div></header><div class="resume-body">${p.sectionOrder.filter(k=>!p.hiddenSections.includes(k)).map(renderSection).join('')}</div></article></div>`;
+    return `<div class="paper-stack" id="resume-print-area"><article class="resume-page template-${p.template}" style="--accent:${esc(p.accent)};--resume-font-size:${p.fontSize}pt;--resume-line-height:${p.lineHeight};--resume-margin:${p.margin}mm;--resume-font:${esc(fontStack())}"><header class="resume-header">${p.showPhoto&&d.photo&&p.template!=='ats'?`<img class="resume-photo" src="${d.photo}" alt="증명사진">`:''}<div class="identity"><h1>${esc(d.name||'이름')}</h1>${d.englishName?`<p class="english-name">${esc(d.englishName)}</p>`:''}${d.title?`<p class="headline">${esc(d.title)}</p>`:''}</div><div class="contact">${p.contactOrder.map(key=>{const value=d[key];if(!value||(key==='birth'&&p.template!=='korean'))return '';return ['website','github','linkedin','blog'].includes(key)?link(value):`<span>${esc(value)}</span>`;}).join('')}</div></header><div class="resume-body">${p.sectionOrder.filter(k=>!p.hiddenSections.includes(k)).map(renderSection).join('')}</div></article></div>`;
   }
   function renderPreview(){const box=document.querySelector('.preview-box');if(box)box.innerHTML=previewHTML();window.refreshPageGuides();}
 
@@ -248,7 +257,7 @@
   };
   function exportJSON(){const b=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`${state.resume.name||'resume'}-resume-v3.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),0);}
   function handleImport(f){if(!f)return;const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result);if(!x?.resume||!x?.preferences)throw 0;state=normalizeState(x);scheduleSave();render();}catch{alert('지원하지 않는 이력서 JSON 파일입니다.');}};r.readAsText(f);}
-  async function printResume(){document.title=`${state.resume.name||'resume'}_resume`;ensureFont();try{await document.fonts.ready;}catch{}window.print();}
+  async function printResume(){document.title=`${state.resume.name||'resume'}_resume`;ensureFont();try{await document.fonts.ready;}catch{}window.refreshPageGuides();await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));window.print();}
 
   function bind(){
     window.refreshPageGuides();
