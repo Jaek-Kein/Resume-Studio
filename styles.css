@@ -19,6 +19,7 @@
 .entry-note{white-space:pre-line}
 .project-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,45%)}
 .project-identity{min-width:0;overflow-wrap:anywhere}
+.project-identity .entry-link{margin-top:0;line-height:1.25}
 .project-meta{min-width:0;text-align:right}
 .project-meta time{display:block}
 .entry-head .project-tech-stack{margin-top:3px;font-size:8.5pt;white-space:pre-line;overflow-wrap:anywhere}
