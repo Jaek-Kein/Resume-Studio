@@ -18,6 +18,10 @@
 /* Preserve line breaks in card descriptions and education notes. */
 .entry-note{white-space:pre-line}
 .entry-description{margin:6px 0 0;white-space:pre-line}
+.skill-group{break-inside:avoid;page-break-inside:avoid}
+.skill-category{margin:0 0 4px;font-size:9pt;color:var(--accent);overflow-wrap:anywhere}
+.skill-group+.skill-group,.skills+.skill-group,.skill-group+.skills{margin-top:8px}
+.skill-group .skills{min-width:0;overflow-wrap:anywhere}
 
 /* Real A4 sheets shared by the preview and PDF output. */
 .preview-box{flex-shrink:0;max-width:100%}

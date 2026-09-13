@@ -159,9 +159,27 @@
     return `<div class="entry compact"><div class="entry-head"><div><strong>${esc(x.name)}</strong><span>${esc(x.issuer||x.org||'')}</span></div><time>${esc(x.date||[x.start,x.end].filter(Boolean).join(' – '))}</time></div>${x.description?`<p class="entry-note">${esc(x.description)}</p>`:''}</div>`;
   }
 
+  function renderSkills(value){
+    const groups=[];
+    for(const line of String(value||'').split(/\r?\n/)){
+      const match=line.match(/^\s*\|([^|]+)\|\s*(.*)$/);
+      const category=match?match[1].trim():'';
+      const items=(match?match[2]:line).split(',').map(x=>x.trim()).filter(Boolean);
+      if(!items.length)continue;
+      const previous=groups.at(-1);
+      if(!category&&previous&&!previous.category)previous.items.push(...items);
+      else groups.push({category,items});
+    }
+    return groups.map(({category,items})=>{
+      const tags=`<div class="skills">${items.map(x=>`<span>${esc(x)}</span>`).join('')}</div>`;
+      return category?`<div class="skill-group"><h3 class="skill-category">${esc(category)}</h3>${tags}</div>`:tags;
+    }).join('');
+  }
+
   function renderSection(k){
     const d=state.resume, def=sectionDefs[k]; if(!def)return '';
     if(def.kind==='text'){const v=d[def.path];return v?`<section>${sectionHead(k)}<p class="summary">${esc(v)}</p></section>`:'';}
+    if(k==='skills'){const content=renderSkills(d.skills);return content?`<section>${sectionHead(k)}${content}</section>`:'';}
     if(def.kind==='tags'){const a=String(d[def.path]||'').split(',').map(x=>x.trim()).filter(Boolean);return a.length?`<section>${sectionHead(k)}<div class="skills">${a.map(x=>`<span>${esc(x)}</span>`).join('')}</div></section>`:'';}
     if(def.kind==='collection'){const a=d[def.key]||[];return a.length?`<section>${sectionHead(k)}${a.map(x=>collectionEntry(def.type,x)).join('')}</section>`:'';}
     if(k==='military'){const m=d.military; const vals=[m.status,m.branch,m.rank,m.specialty,[m.start,m.end].filter(Boolean).join(' – '),m.dischargeReason].filter(Boolean);return vals.length?`<section>${sectionHead(k)}<div class="kv-grid">${[['복무 상태',m.status],['군별',m.branch],['계급',m.rank],['병과/특기',m.specialty],['복무기간',[m.start,m.end].filter(Boolean).join(' – ')],['전역 사유',m.dischargeReason]].filter(x=>x[1]).map(([a,b])=>`<div><b>${esc(a)}</b><span>${esc(b)}</span></div>`).join('')}</div></section>`:'';}
@@ -197,7 +215,7 @@
       if(k==='summary')html+=`<div class="form-section"><h3>자기소개</h3>${area('Professional Summary','resume.summary',d.summary,5)}</div>`;
       if(k==='core')html+=`<div class="form-section"><h3>핵심 역량</h3>${area('쉼표(,)로 구분','resume.coreCompetencies',d.coreCompetencies,3)}</div>`;
       if(def.key)html+=formForCollection(def.key,def.type);
-      if(k==='skills')html+=`<div class="form-section"><h3>기술</h3>${area('쉼표(,)로 구분','resume.skills',d.skills,3)}</div>`;
+      if(k==='skills')html+=`<div class="form-section"><h3>기술</h3>${area('쉼표(,)로 구분 · 카테고리는 |이름| 기술1,기술2','resume.skills',d.skills,5)}<p class="field-help">카테고리마다 줄을 바꿔 입력하세요. 카테고리 없이 기술만 입력해도 됩니다.<br>|Frontend| React, TypeScript, CSS<br>|Backend| Node.js, Python</p></div>`;
       if(k==='military')html+=`<div class="form-section"><h3>병역 사항</h3><div class="grid3">${select('복무 상태','resume.military.status',d.military.status,['','군필','미필','면제','복무 중','해당 없음'])}${field('군별','resume.military.branch',d.military.branch,'text','육군 / 해군 / 공군 등')}${field('계급','resume.military.rank',d.military.rank)}</div><div class="grid3">${field('병과 / 특기','resume.military.specialty',d.military.specialty)}${field('복무 시작','resume.military.start',d.military.start)}${field('복무 종료','resume.military.end',d.military.end)}</div>${field('전역 사유 / 면제 사유','resume.military.dischargeReason',d.military.dischargeReason)}</div>`;
       if(k==='koreanSpecial')html+=`<div class="form-section"><h3>한국형 추가 사항</h3><p class="field-help">민감하거나 채용에 불필요할 수 있는 항목이므로 필요한 제출처에서만 사용하시길 권장합니다.</p><div class="grid3">${select('보훈 여부','resume.koreanSpecial.veteran',d.koreanSpecial.veteran,['','해당 없음','대상'])}${select('장애 여부','resume.koreanSpecial.disability',d.koreanSpecial.disability,['','해당 없음','대상'])}${select('취업보호 대상','resume.koreanSpecial.employmentProtection',d.koreanSpecial.employmentProtection,['','해당 없음','대상'])}</div><div class="grid2">${field('운전면허','resume.koreanSpecial.driverLicense',d.koreanSpecial.driverLicense)}${field('해외여행 결격사유','resume.koreanSpecial.travelRestriction',d.koreanSpecial.travelRestriction)}</div>${area('기타','resume.koreanSpecial.note',d.koreanSpecial.note,2)}</div>`;
       if(k==='interests')html+=`<div class="form-section"><h3>취미·관심사</h3>${area('쉼표(,)로 구분','resume.interests',d.interests,2)}</div>`;
