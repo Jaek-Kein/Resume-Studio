@@ -17,6 +17,7 @@
 
 /* Preserve line breaks in card descriptions and education notes. */
 .entry-note{white-space:pre-line}
+.entry-description{margin:6px 0 0;white-space:pre-line}
 
 /* Real A4 sheets shared by the preview and PDF output. */
 .preview-box{flex-shrink:0;max-width:100%}

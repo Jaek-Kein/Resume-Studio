@@ -6,7 +6,7 @@
   const clone = x => JSON.parse(JSON.stringify(x));
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const safeUrl = v => /^https?:\/\//i.test(v) ? v : `https://${v}`;
-  const lines = t => { const ls = String(t || '').split('\n').map(s => s.trim()).filter(Boolean); return ls.length ? `<ul>${ls.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''; };
+  const description = t => t ? `<p class="entry-description">${esc(t)}</p>` : '';
   const link = v => v ? `<a href="${esc(safeUrl(v))}" target="_blank" rel="noreferrer">${esc(v.replace(/^https?:\/\//,''))}</a>` : '';
 
   const templateLabels = { korean:'한국 표준형', ats:'ATS 단일컬럼', minimal:'미니멀', modern:'모던', compact:'컴팩트', europass:'Europass형' };
@@ -149,8 +149,8 @@
   }
 
   function collectionEntry(type,x){
-    if(type==='career') return `<div class="entry"><div class="entry-head"><div><strong>${esc(x.role||'직무')}</strong><span>${esc([x.company,x.location].filter(Boolean).join(' · '))}</span></div><time>${esc([x.start,x.end].filter(Boolean).join(' – '))}</time></div>${lines(x.description)}</div>`;
-    if(type==='project') return `<div class="entry"><div class="entry-head"><div><strong>${esc(x.name||'프로젝트명')}</strong><span>${esc(x.role||'')}</span></div><time>${esc([x.start,x.end].filter(Boolean).join(' – '))}</time></div>${x.link?`<div class="entry-link">${link(x.link)}</div>`:''}${lines(x.description)}</div>`;
+    if(type==='career') return `<div class="entry"><div class="entry-head"><div><strong>${esc(x.role||'직무')}</strong><span>${esc([x.company,x.location].filter(Boolean).join(' · '))}</span></div><time>${esc([x.start,x.end].filter(Boolean).join(' – '))}</time></div>${description(x.description)}</div>`;
+    if(type==='project') return `<div class="entry"><div class="entry-head"><div><strong>${esc(x.name||'프로젝트명')}</strong><span>${esc(x.role||'')}</span></div><time>${esc([x.start,x.end].filter(Boolean).join(' – '))}</time></div>${x.link?`<div class="entry-link">${link(x.link)}</div>`:''}${description(x.description)}</div>`;
     if(type==='education') return `<div class="entry compact"><div class="entry-head"><div><strong>${esc(x.school||'학교명')}</strong><span>${esc([x.degree,x.major,x.location].filter(Boolean).join(' · '))}</span></div><time>${esc([x.start,x.end].filter(Boolean).join(' – '))}</time></div>${x.note?`<p class="entry-note">${esc(x.note)}</p>`:''}</div>`;
     if(type==='certificate') return `<div class="row-entry"><strong>${esc(x.name)}</strong><span>${esc([x.issuer,x.credential].filter(Boolean).join(' · '))}</span><time>${esc(x.date)}</time></div>`;
     if(type==='language') return `<div class="row-entry"><strong>${esc(x.name)}</strong><span>${esc(x.level)}</span><time>${esc(x.score||'')}</time></div>`;
@@ -179,7 +179,7 @@
   function formForCollection(key,type){ const d=state.resume, a=d[key]||[], label=Object.values(sectionDefs).find(x=>x.key===key)?.label||key; return `<div class="form-section"><div class="section-row"><h3>${label}</h3><button class="ghost" data-action="add" data-key="${key}">+ 추가</button></div>${a.length?'':'<p class="empty-hint">필요한 경우 항목을 추가해 주세요.</p>'}${a.map((x,i)=>repeat(`${label} ${i+1}`,key,i,collectionFields(key,type,x,i))).join('')}</div>`; }
   function collectionFields(key,type,x,i){
     const b=`resume.${key}.${i}.`;
-    if(type==='career')return `<div class="grid2">${field('회사/기관',b+'company',x.company)}${field('직무/역할',b+'role',x.role)}</div><div class="grid3">${field('지역',b+'location',x.location)}${field('시작',b+'start',x.start)}${field('종료',b+'end',x.end)}</div>${area('주요 업무 / 성과 (한 줄당 한 항목)',b+'description',x.description)}`;
+    if(type==='career')return `<div class="grid2">${field('회사/기관',b+'company',x.company)}${field('직무/역할',b+'role',x.role)}</div><div class="grid3">${field('지역',b+'location',x.location)}${field('시작',b+'start',x.start)}${field('종료',b+'end',x.end)}</div>${area('주요 업무 / 성과',b+'description',x.description)}`;
     if(type==='project')return `<div class="grid2">${field('명칭',b+'name',x.name)}${field('역할',b+'role',x.role)}</div><div class="grid2">${field('시작',b+'start',x.start)}${field('종료',b+'end',x.end)}</div>${field('링크',b+'link',x.link)}${area('설명 / 성과',b+'description',x.description)}`;
     if(type==='education')return `<div class="grid2">${field('학교',b+'school',x.school)}${field('전공',b+'major',x.major)}</div><div class="grid3">${field('학위',b+'degree',x.degree)}${field('입학',b+'start',x.start)}${field('졸업',b+'end',x.end)}</div><div class="grid2">${field('지역',b+'location',x.location)}${field('비고 / GPA',b+'note',x.note)}</div>`;
     if(type==='certificate')return `${field('자격/인증명',b+'name',x.name)}<div class="grid2">${field('발급기관',b+'issuer',x.issuer)}${field('취득일',b+'date',x.date)}</div>${field('자격번호 / Credential',b+'credential',x.credential)}`;
