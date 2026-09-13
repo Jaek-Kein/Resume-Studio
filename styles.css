@@ -17,6 +17,13 @@
 
 /* Preserve line breaks in card descriptions and education notes. */
 .entry-note{white-space:pre-line}
+.basic-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.basic-field{min-width:0}
+.basic-field .field{margin-bottom:4px}
+.basic-field-actions{display:flex;justify-content:flex-end;gap:4px}
+.basic-field-actions .ghost{padding:3px 9px;font-size:12px}
+.basic-field-actions button:disabled{opacity:.3;cursor:default}
+@media(max-width:520px){.basic-fields{grid-template-columns:minmax(0,1fr)}}
 .entry-description{margin:6px 0 0;white-space:pre-line}
 .skill-group{break-inside:avoid;page-break-inside:avoid}
 .skill-category{margin:0 0 4px;font-size:9pt;color:var(--accent);overflow-wrap:anywhere}

@@ -74,7 +74,10 @@
     certificates:[{id:uid(),name:'정보처리기사',issuer:'한국산업인력공단',date:'2024.06',credential:''}],
     languages:[{id:uid(),name:'한국어',level:'원어민'},{id:uid(),name:'English',level:'Business / B2'}]
   };
+  const contactFields = {"email": ["이메일", "email"], "phone": ["연락처"], "address": ["주소"], "birth": ["생년월일 (선택)"], "website": ["포트폴리오"], "github": ["GitHub"], "linkedin": ["LinkedIn"]};
+  const normalizeContactOrder = order => [...new Set([...(Array.isArray(order)?order:[]), ...Object.keys(contactFields)])].filter(k=>Object.hasOwn(contactFields,k));
   const defaultPrefs = {
+    contactOrder:Object.keys(contactFields),
     template:'korean', accent:'#1f2937', fontFamily:'pretendard', customFontName:'', customFontUrl:'', fontSize:10.3, lineHeight:1.5, margin:17, showPhoto:true,
     panelOrder:'editor-left', sectionOrder:[...defaultOrder],
     hiddenSections:defaultOrder.filter(k => !['summary','experience','projects','education','skills','certificates','languages'].includes(k))
@@ -87,6 +90,7 @@
     r.military = {...blankResume.military, ...(r.military||{})};
     r.koreanSpecial = {...blankResume.koreanSpecial, ...(r.koreanSpecial||{})};
     const p = {...clone(defaultPrefs), ...(raw.preferences || {})};
+    p.contactOrder=normalizeContactOrder(p.contactOrder);
     if(raw.version===2){
       p.sectionOrder=[...new Set([...(raw.preferences?.sectionOrder||[]), ...defaultOrder])];
       p.hiddenSections=[...new Set([...(raw.preferences?.hiddenSections||[]), ...defaultPrefs.hiddenSections.filter(k=>!raw.preferences?.sectionOrder?.includes(k))])];
@@ -189,8 +193,8 @@
   }
 
   function previewHTML(){
-    const d=state.resume,p=state.preferences, contacts=[d.email,d.phone,d.address].filter(Boolean);
-    return `<div class="paper-stack" id="resume-print-area"><article class="resume-page template-${p.template}" style="--accent:${esc(p.accent)};--resume-font-size:${p.fontSize}pt;--resume-line-height:${p.lineHeight};--resume-margin:${p.margin}mm;--resume-font:${esc(fontStack())}"><header class="resume-header">${p.showPhoto&&d.photo&&p.template!=='ats'?`<img class="resume-photo" src="${d.photo}" alt="증명사진">`:''}<div class="identity"><h1>${esc(d.name||'이름')}</h1>${d.englishName?`<p class="english-name">${esc(d.englishName)}</p>`:''}${d.title?`<p class="headline">${esc(d.title)}</p>`:''}</div><div class="contact">${contacts.map(x=>`<span>${esc(x)}</span>`).join('')}${d.birth&&p.template==='korean'?`<span>${esc(d.birth)}</span>`:''}${link(d.website)}${link(d.github)}${link(d.linkedin)}</div></header><div class="resume-body">${p.sectionOrder.filter(k=>!p.hiddenSections.includes(k)).map(renderSection).join('')}</div></article></div>`;
+    const d=state.resume,p=state.preferences;
+    return `<div class="paper-stack" id="resume-print-area"><article class="resume-page template-${p.template}" style="--accent:${esc(p.accent)};--resume-font-size:${p.fontSize}pt;--resume-line-height:${p.lineHeight};--resume-margin:${p.margin}mm;--resume-font:${esc(fontStack())}"><header class="resume-header">${p.showPhoto&&d.photo&&p.template!=='ats'?`<img class="resume-photo" src="${d.photo}" alt="증명사진">`:''}<div class="identity"><h1>${esc(d.name||'이름')}</h1>${d.englishName?`<p class="english-name">${esc(d.englishName)}</p>`:''}${d.title?`<p class="headline">${esc(d.title)}</p>`:''}</div><div class="contact">${p.contactOrder.map(key=>{const value=d[key];if(!value||(key==='birth'&&p.template!=='korean'))return '';return ['website','github','linkedin'].includes(key)?link(value):`<span>${esc(value)}</span>`;}).join('')}</div></header><div class="resume-body">${p.sectionOrder.filter(k=>!p.hiddenSections.includes(k)).map(renderSection).join('')}</div></article></div>`;
   }
   function renderPreview(){const box=document.querySelector('.preview-box');if(box)box.innerHTML=previewHTML();window.refreshPageGuides();}
 
@@ -207,7 +211,7 @@
     return `<div class="grid2">${field('명칭',b+'name',x.name)}${field('기관',b+'issuer',x.issuer)}</div><div class="grid2">${field('기간/일자',b+'date',x.date)}${field('지역',b+'location',x.location||'')}</div>${area('설명',b+'description',x.description,3)}`;
   }
 
-  function contentHTML(){ const d=state.resume; const visible=k=>!state.preferences.hiddenSections.includes(k); let html=`<div class="form-section"><h3>기본 정보</h3><div class="photo-row"><div class="photo-thumb">${d.photo?`<img src="${d.photo}">`:'<span>사진</span>'}</div><div><label class="upload-btn">사진 선택<input id="photoInput" type="file" accept="image/*"></label>${d.photo?'<button class="text-btn" data-action="remove-photo">사진 제거</button>':''}<p class="field-help">JPG/PNG, 3MB 이하. ATS형에서는 자동 숨김됩니다.</p></div></div><div class="grid2">${field('이름','resume.name',d.name)}${field('영문 이름','resume.englishName',d.englishName)}</div><div class="grid2">${field('직무 / 헤드라인','resume.title',d.title)}${field('국적 (선택)','resume.nationality',d.nationality)}</div><div class="grid2">${field('이메일','resume.email',d.email,'email')}${field('연락처','resume.phone',d.phone)}</div><div class="grid3">${field('주소','resume.address',d.address)}${field('생년월일 (선택)','resume.birth',d.birth)}${field('성별 (선택)','resume.gender',d.gender)}</div>${field('포트폴리오','resume.website',d.website)}<div class="grid2">${field('GitHub','resume.github',d.github)}${field('LinkedIn','resume.linkedin',d.linkedin)}</div></div>`;
+  function contentHTML(){ const d=state.resume; const visible=k=>!state.preferences.hiddenSections.includes(k); let html=`<div class="form-section"><h3>기본 정보</h3><div class="photo-row"><div class="photo-thumb">${d.photo?`<img src="${d.photo}">`:'<span>사진</span>'}</div><div><label class="upload-btn">사진 선택<input id="photoInput" type="file" accept="image/*"></label>${d.photo?'<button class="text-btn" data-action="remove-photo">사진 제거</button>':''}<p class="field-help">JPG/PNG, 3MB 이하. ATS형에서는 자동 숨김됩니다.</p></div></div><div class="grid2">${field('이름','resume.name',d.name)}${field('영문 이름','resume.englishName',d.englishName)}</div><div class="grid2">${field('직무 / 헤드라인','resume.title',d.title)}${field('국적 (선택)','resume.nationality',d.nationality)}</div><div class="grid2">${field('성별 (선택)','resume.gender',d.gender)}</div><p class="field-help">오른쪽 상단 항목 · 화살표로 입력 및 표시 순서를 바꿀 수 있습니다.</p><div class="basic-fields">${state.preferences.contactOrder.map((key,i)=>{const [label,type='text']=contactFields[key];return `<div class="basic-field" data-contact-field="${key}">${field(label,'resume.'+key,d[key],type)}<div class="basic-field-actions"><button type="button" class="ghost" data-action="move-contact" data-key="${key}" data-direction="-1" aria-label="${label} &#50526;&#51004;&#47196; &#51060;&#46041;" ${i===0?'disabled':''}>&uarr;</button><button type="button" class="ghost" data-action="move-contact" data-key="${key}" data-direction="1" aria-label="${label} &#46244;&#47196; &#51060;&#46041;" ${i===state.preferences.contactOrder.length-1?'disabled':''}>&darr;</button></div></div>`;}).join('')}</div></div>`;
     for(const k of state.preferences.sectionOrder){
       const def=sectionDefs[k];
       if(!visible(k)||!def)continue;
@@ -258,6 +262,14 @@
     app.querySelectorAll('[data-action]').forEach(b=>{const a=b.dataset.action;if(a==='visibility')return;b.addEventListener('click',async()=>{
       if(a==='print')await printResume();
       if(a==='undo'||a==='redo')restoreHistory(a);
+      if(a==='move-contact'){
+        const order=state.preferences.contactOrder,from=order.indexOf(b.dataset.key),to=from+Number(b.dataset.direction);
+        if(from<0||to<0||to>=order.length)return;
+        order.splice(to,0,order.splice(from,1)[0]);scheduleSave();render(true);
+        const moved=app.querySelector(`[data-contact-field="${b.dataset.key}"]`);
+        moved?.scrollIntoView({block:'nearest'});
+        moved?.querySelector('input')?.focus({preventScroll:true});
+      }
       if(a==='swap'){state.preferences.panelOrder=state.preferences.panelOrder==='editor-left'?'preview-left':'editor-left';scheduleSave();render();}
       if(a==='add'){state.resume[b.dataset.key].push(addDefaults[b.dataset.key]());scheduleSave();render(true);}
       if(a==='remove'){state.resume[b.dataset.key].splice(Number(b.dataset.index),1);scheduleSave();render(true);}
