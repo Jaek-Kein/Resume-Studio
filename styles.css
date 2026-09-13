@@ -17,6 +17,9 @@
 
 /* Preserve line breaks in card descriptions and education notes. */
 .entry-note{white-space:pre-line}
+.repeat-actions{display:flex;align-items:center;gap:4px}
+.repeat-actions .ghost{padding:4px 9px}
+.repeat-actions button:disabled{opacity:.3;cursor:default}
 .project-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,45%)}
 .project-identity{min-width:0;overflow-wrap:anywhere}
 .project-identity .entry-link{margin-top:0;line-height:1.25}

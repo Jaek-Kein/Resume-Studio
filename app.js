@@ -137,7 +137,7 @@
   const field=(label,path,value,type='text',placeholder='')=>`<label class="field"><span>${label}</span><input data-path="${path}" type="${type}" value="${esc(value)}" placeholder="${esc(placeholder)}"></label>`;
   const area=(label,path,value,rows=4)=>`<label class="field"><span>${label}</span><textarea data-path="${path}" rows="${rows}">${esc(value)}</textarea></label>`;
   const select=(label,path,value,options)=>`<label class="field"><span>${label}</span><select data-path="${path}">${options.map(o=>`<option value="${esc(o)}" ${o===value?'selected':''}>${esc(o||'선택 안 함')}</option>`).join('')}</select></label>`;
-  const repeat=(title,key,i,body)=>`<div class="repeat-card"><div class="section-row"><b>${title}</b><button class="danger" data-action="remove" data-key="${key}" data-index="${i}">삭제</button></div>${body}</div>`;
+  const repeat=(title,key,i,body)=>`<div class="repeat-card" data-collection="${key}" data-item-index="${i}"><div class="section-row"><b>${title}</b><div class="repeat-actions">${key==='projects'?`<button type="button" class="ghost" data-action="move-project" data-index="${i}" data-direction="-1" aria-label="${title} 위로 이동" ${i===0?'disabled':''}>↑</button><button type="button" class="ghost" data-action="move-project" data-index="${i}" data-direction="1" aria-label="${title} 아래로 이동" ${i===state.resume.projects.length-1?'disabled':''}>↓</button>`:''}<button class="danger" data-action="remove" data-key="${key}" data-index="${i}">삭제</button></div></div>${body}</div>`;
   const sectionHead=(k)=>`<h2 class="resume-section-title">${state.preferences.template==='korean'?sectionDefs[k].label:sectionDefs[k].en}${state.preferences.template==='modern'?'<span></span>':''}</h2>`;
 
   function getPath(path){ return path.split('.').reduce((o,k)=>o?.[/^\d+$/.test(k)?Number(k):k],state); }
@@ -272,6 +272,14 @@
       }
       if(a==='swap'){state.preferences.panelOrder=state.preferences.panelOrder==='editor-left'?'preview-left':'editor-left';scheduleSave();render();}
       if(a==='add'){state.resume[b.dataset.key].push(addDefaults[b.dataset.key]());scheduleSave();render(true);}
+      if(a==='move-project'){
+        const items=state.resume.projects,from=Number(b.dataset.index),to=from+Number(b.dataset.direction);
+        if(!Number.isInteger(from)||!Number.isInteger(to)||from<0||from>=items.length||to<0||to>=items.length)return;
+        items.splice(to,0,items.splice(from,1)[0]);scheduleSave();render(true);
+        const card=app.querySelector(`[data-collection="projects"][data-item-index="${to}"]`);
+        card?.scrollIntoView({block:'nearest'});
+        card?.querySelector('input')?.focus({preventScroll:true});
+      }
       if(a==='remove'){state.resume[b.dataset.key].splice(Number(b.dataset.index),1);scheduleSave();render(true);}
       if(a==='template'){state.preferences.template=b.dataset.value;scheduleSave();render(true);}
       if(a==='remove-photo'){state.resume.photo='';scheduleSave();render(true);}
